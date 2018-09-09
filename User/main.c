@@ -10,7 +10,7 @@ EvalboardsTypeDef Evalboards;
 
 const char *VersionString = MODULE_ID"V303"; // module id and version of the firmware shown in the TMCL-IDE
 
-/* Check if jumping into bootloader is forced                                           */
+/* Check if jumping into bootloader is forced                                            */
 /*                                                                                      */
 /* In order to jump to bootloader e.g. because of an accidental infinite loop           */
 /* in a modified firmware you may short ID_CLK and ID_CH0 pins on start up.             */

@@ -67,7 +67,9 @@
 		IOPinTypeDef LED_STAT;
 		IOPinTypeDef LED_ERROR;
 
-        IOPinTypeDef KEY_STAT;
+        IOPinTypeDef KEY_V_ZERO;
+        IOPinTypeDef KEY_LD;
+        IOPinTypeDef KEY_RU ;
 		IOPinTypeDef KEY_ERROR;
 
 		IOPinTypeDef EXTIO_2;

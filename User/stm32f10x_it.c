@@ -134,11 +134,11 @@ void PendSV_Handler(void)
   * @param  None
   * @retval None
   */
-extern volatile u32 systick;
-void SysTick_Handler(void)
-{
-    systick++;
-}
+//extern void systick_task(void);
+//void SysTick_Handler(void)
+//{
+//   systick_task();
+//}
 
 /******************************************************************************/
 /*                 STM32F10x Peripherals Interrupt Handlers                   */

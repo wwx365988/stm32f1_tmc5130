@@ -515,7 +515,7 @@ void tmcl_boot()
 
 	HAL.USB->deInit();
 
-	wait(500);
+	delay_ms(250);
 
 	HAL.Timer->deInit();
 	HAL.RS232->deInit();

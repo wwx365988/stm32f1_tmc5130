@@ -1,51 +1,140 @@
 #include "HAL.h"
-#include "hal/SysTick.h"
+#include "SysTick.h"
 
-volatile u32 systick = 0;
+static __IO u32 TimingDelay;
+uint16_t g_run_cnt       = 0;
+uint8_t  g_second        = 0;
+uint8_t  g_key_ld        = 0;
+uint8_t  g_key_ld_cnt    = 0;
+uint8_t  g_key_ru        = 0;
+uint8_t  g_key_ru_cnt    = 0;
+uint8_t  g_key_zero      = 0;
+uint8_t  g_key_zero_cnt  = 0;
 
-//void __attribute__ ((interrupt)) SysTick_Handler(void);
+#define  KEY_V_ZERO GPIO_Pin_13
+#define  KEY_V_LD   GPIO_Pin_14
+#define  KEY_V_RU   GPIO_Pin_15
 
-//void SysTick_Handler(void)
-//{
-//	systick++;
-//}
+#define KEY_SHORT_PRESS   10   //10*2ms=20ms
+#define KEY_LONG_PRESS    750  //750*2ms=1.5S
 
-void systick_init()
+uint8_t vInKeyStatic = 0;
+
+void __attribute__ ((interrupt)) SysTick_Handler(void);
+
+void SysTick_Handler(void)
 {
-	SysTick_Config(15000);
-	SysTick_CLKSourceConfig(SysTick_CLKSource_HCLK_Div8);
+	systick_task();
 }
 
-u32 systick_getTick()
+void systick_init(void)
 {
-	return systick;
+    /* SystemFrequency / 1000    1ms中断一次
+     * SystemFrequency / 100000  10us中断一次
+     * SystemFrequency / 1000000 1us中断一次
+     */
+    if (SysTick_Config(SystemCoreClock / 500))   // ST3.5.0库版本,2ms进入一次滴答中断
+    { 
+        /* Capture error */ 
+        while (1);
+    }
+    // 关闭滴答定时器  
+//    SysTick->CTRL &= ~ SysTick_CTRL_ENABLE_Msk;
+
 }
 
-/* Systick values are in milliseconds, accessing the value is faster. As a result
- * we have a random invisible delay of less than a millisecond whenever we use
- * systicks. This can result in a situation where we access the systick just before it changes:
- *  -> Access at 0,99ms gives systick 0ms
- *  -> Access at 1.01ms gives systick 1ms
- *  -> systick difference of 1ms, even though only 0.02 ms passed
- * To prevent this, we generally apply a correction of -1 to any systick difference.
- * In wait() this is done by using '<=' instead of '<'
- * In timeSince() the subtraction is carried out on the result. That subtraction is prevented from underflowing
- * to UINT32_MAX, returning 0 in that case (Saturated subtraction).
- *
- */
-void wait(uint32 delay)	// wait for [delay] ms/systicks
+void delay_ms(uint16_t das)
 {
-	uint32 startTick = systick;
-	while((systick-startTick) <= delay) {}
+  	TimingDelay = das;
+	
+  	while(TimingDelay > 0)
+    {
+		    ;
+	}
 }
 
-uint32 timeSince(uint32 tick)	// time difference since the [tick] timestamp in ms/systicks
+void key_scan(void)
 {
-	uint32 tickDiff = systick - tick;
+    if ((GPIOC->IDR&KEY_V_ZERO) == 0)  //KEY_V_ZERO按下
+    {
+        if (g_key_zero == 0) //如果最初标记为0
+        {	
+            if (g_key_zero_cnt >= KEY_SHORT_PRESS) //计数值达到一定值后才认为真正按下(消除机械抖动)
+            {
+                    g_key_zero = 1;//按键按下标志
+                    vInKeyStatic |= KEY_ZERO;//按键值,自定义
+            }
+            else 
+            {
+                    g_key_zero_cnt++;	//滴答定时器计数
+            }
+        }
+    }
+    else   //KEY_V_ZERO松开
+    {
+            g_key_zero = 0;
+            g_key_zero_cnt  = 0;
+    }
+    
+    if ((GPIOC->IDR&KEY_LD) == 0)  //KEY_LD按下
+    {
+        if (g_key_ld == 0) //如果最初标记为0
+        {	
+            if (g_key_ld_cnt >= KEY_SHORT_PRESS) //计数值达到一定值后才认为真正按下(消除机械抖动)
+            {
+                    g_key_ld = 1;//按键按下标志
+                    vInKeyStatic |= KEY_LD;//按键值,自定义
+            }
+            else 
+            {
+                    g_key_ld_cnt++;	//滴答定时器计数
+            }
+        }
+    }
+    else   //KEY_V_ZERO松开
+    {
+            g_key_ld = 0;
+            g_key_ld_cnt  = 0;
+    }
 
-	// Prevent subtraction underflow - saturate to 0 instead
-	if(tickDiff != 0)
-		return tickDiff - 1;
-	else
-		return 0;
+    if ((GPIOC->IDR&KEY_RU) == 0)  //KEY_RU按下
+    {
+        if (g_key_ru == 0) //如果最初标记为0
+        {	
+            if (g_key_ru_cnt >= KEY_SHORT_PRESS) //计数值达到一定值后才认为真正按下(消除机械抖动)
+            {
+                    g_key_ru = 1;//按键按下标志
+                    vInKeyStatic |= KEY_RU;//按键值,自定义
+            }
+            else 
+            {
+                    g_key_ru_cnt++;	//滴答定时器计数
+            }
+        }
+    }
+    else   //KEY_V_ZERO松开
+    {
+            g_key_ru = 0;
+            g_key_ru_cnt  = 0;
+    }
+}
+
+void systick_task(void)
+{	
+    if (TimingDelay > 0) 
+    {
+        TimingDelay--;		
+    }
+
+    g_run_cnt++;
+    if(g_run_cnt == 250) 
+    { 
+        GPIOC->ODR ^= GPIO_Pin_4;
+        g_second = 1;
+        g_run_cnt = 0;
+    }
+     
+    key_scan();	
+
+    WWDG_SetCounter(127);  // Update WWDG counter
 }

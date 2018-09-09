@@ -116,7 +116,7 @@ void vitalsignsmonitor_checkVitalSigns()
 	static uint32 lastTick = 0;
 	uint32 tick;
 
-	tick = systick_getTick();
+//	tick = systick_getTick();
 
 	// Check motor supply VM every 10ms
 	if((tick - lastTick) >= 10)

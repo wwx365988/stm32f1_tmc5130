@@ -10,7 +10,7 @@ EvalboardsTypeDef Evalboards;
 
 const char *VersionString = MODULE_ID"V303"; // module id and version of the firmware shown in the TMCL-IDE
 
-/* Check if jumping into bootloader is forced                                             */
+/* Check if jumping into bootloader is forced                                           */
 /*                                                                                      */
 /* In order to jump to bootloader e.g. because of an accidental infinite loop           */
 /* in a modified firmware you may short ID_CLK and ID_CH0 pins on start up.             */
@@ -81,25 +81,11 @@ static void init()
 	VitalSignsMonitor.busy 	= 0;    // not busy any more!
 		#endif
 }
-static void Key_Delay(__IO u32 nCount)
-{
-	for(; nCount != 0; nCount--);
-} 
-/* main function */
-void LED_GPIO_Config(void)
-{	
-		GPIO_InitTypeDef GPIO_InitStructure;
-		RCC_APB2PeriphClockCmd( RCC_APB2Periph_GPIOC, ENABLE); 
-		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP;     
-		GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz; 
-		GPIO_InitStructure.GPIO_Pin = GPIO_Pin_4;
-		GPIO_Init(GPIOC, &GPIO_InitStructure);	
-}
+
 int main(void)
 {
 	// Start all initialization routines
 	init();
-//LED_GPIO_Config();
 	while(1)
 	{
 //		// Check all parameters and life signs and mark errors
@@ -111,10 +97,13 @@ int main(void)
 
 //		// Process TMCL communication
 //		tmcl_process();
-		if( Key_Scan(GPIOC,GPIO_Pin_13) == 0  )
-		{
-			LED_TOGGLE();
-		}  
+
+//        LED_ON();
+//        delay_ms(500);
+//        LED_OFF();
+//        delay_ms(500);
+
+        handle_all_key();
 	}
 #ifdef UNRET
 	return 0;

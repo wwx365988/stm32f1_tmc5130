@@ -30,16 +30,17 @@ const HALTypeDef HAL =
 
 static void init(void)
 {
-//	__enable_irq();
+	__enable_irq();
 
-//	systick_init();//后面再来研究一下如何配置
-//	wait(100);
+	systick_init();//????????????
+    delay_ms(100);
 
 	IOs.init();
 	IOMap.init();
 //	SPI.init();
 //	RS232.init();
 //	LEDs.init();
+//  KEYs.init();
 //	ADCs.init();
 }
 

@@ -29,7 +29,9 @@ KEYsTypeDef KEYs =
 
 static void init()
 {
-	HAL.IOs->config->reset(&HAL.IOs->pins->KEY_STAT);
+	HAL.IOs->config->reset(&HAL.IOs->pins->KEY_V_ZERO);
+	HAL.IOs->config->reset(&HAL.IOs->pins->KEY_LD);
+    HAL.IOs->config->reset(&HAL.IOs->pins->KEY_RU);
 	HAL.IOs->config->reset(&HAL.IOs->pins->KEY_ERROR);
 	KEY_OFF();
 	KEY_ERROR_OFF();
@@ -65,30 +67,25 @@ static void toggleError()
 	KEY_ERROR_TOGGLE();
 }
 
-/// 不精确的延时
-static void Key_Delay(__IO u32 nCount)
+void handle_all_key(void)
 {
-	for(; nCount != 0; nCount--);
-} 
-
-
-unsigned char Key_Scan(GPIO_TypeDef* GPIOx,u16 GPIO_Pin)
-{			
-	/*检测是否有按键按下 */
-	if(GPIO_ReadInputDataBit(GPIOx,GPIO_Pin) == 0 ) 
-	{	   
-		/*延时消抖*/
-		Key_Delay(10000);		
-		if(GPIO_ReadInputDataBit(GPIOx,GPIO_Pin) == 0 )  
-		{	 
-			/*等待按键释放 */
-			while(GPIO_ReadInputDataBit(GPIOx,GPIO_Pin) == 0);   
-			return 	0;	 
-		}
-		else
-			return 1;
-	}
-	else
-		return 1;
+    extern uint8_t vInKeyStatic;
+	if ((vInKeyStatic & 0x2) > 0)      /* 按住 KEY_V_ZERO复位,STM32烧写 */
+	{
+        vInKeyStatic &= ~(0x2);
+        GPIOC->ODR ^= GPIO_Pin_4;
+        //do_something1();
+    }
+    else if ((vInKeyStatic & 0x4) > 0)  /* 按住KEY_LD复位,水平手动模式 */
+	{
+        vInKeyStatic &= ~(0x4);
+        //do_something2();
+    }
+    else if ((vInKeyStatic & 0x8) > 0)  /* 按住KEY_RU复位,垂直手动模式 */
+	{
+        vInKeyStatic &= ~(0x8);
+        //do_something3();
+    }
 }
+
 

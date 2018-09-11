@@ -32,13 +32,14 @@ static void init(void)
 {
 	__enable_irq();
 
-	systick_init();//????????????
+	systick_init();//后面再来研究一下如何配置
     delay_ms(100);
 
 	IOs.init();
 	IOMap.init();
 //	SPI.init();
-//	RS232.init();
+	RS232.init();
+    UART.init();
 //	LEDs.init();
 //  KEYs.init();
 //	ADCs.init();

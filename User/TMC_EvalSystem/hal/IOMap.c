@@ -568,14 +568,14 @@ IOPinMapTypeDef IOMap =
 			.GPIO_Speed  = GPIO_Speed_50MHz,     // GPIOOType_TypeDef GPIO_OType
 		}
 	},
-
+#endif
 	.RS232_TX =  // IOPinTypeDef RS232_TX
 	{
-		.setBitRegister      = &(GPIOC->BSRR),  // __IO uint16 *setBitRegister
-		.resetBitRegister    = &(GPIOC->BRR),  // __IO uint16 *resetBitRegister
-		.port                = GPIOC,            // GPIO_TypeDef *port
-		.bitWeight           = GPIO_Pin_6,       // uint32 pinBitWeight
-		.bit                 = 6,                // unsigned char bit
+		.setBitRegister      = &(GPIOA->BSRR),  // __IO uint16 *setBitRegister
+		.resetBitRegister    = &(GPIOA->BRR),  // __IO uint16 *resetBitRegister
+		.port                = GPIOA,            // GPIO_TypeDef *port
+		.bitWeight           = GPIO_Pin_9,       // uint32 pinBitWeight
+		.bit                 = 9,                // unsigned char bit
 		.resetConfiguration  =
 		{
 			.GPIO_Mode   = GPIO_Mode_AF_PP,         // GPIOMode_TypeDef GPIO_Mode
@@ -585,11 +585,25 @@ IOPinMapTypeDef IOMap =
 
 	.RS232_RX =  // IOPinTypeDef RS232_RX
 	{
-		.setBitRegister      = &(GPIOC->BSRR),  // __IO uint16 *setBitRegister
-		.resetBitRegister    = &(GPIOC->BRR),  // __IO uint16 *resetBitRegister
-		.port                = GPIOC,            // GPIO_TypeDef *port
-		.bitWeight           = GPIO_Pin_7,       // uint32 pinBitWeight
-		.bit                 = 7,                // unsigned char bit
+		.setBitRegister      = &(GPIOA->BSRR),  // __IO uint16 *setBitRegister
+		.resetBitRegister    = &(GPIOA->BRR),  // __IO uint16 *resetBitRegister
+		.port                = GPIOA,            // GPIO_TypeDef *port
+		.bitWeight           = GPIO_Pin_10,       // uint32 pinBitWeight
+		.bit                 = 10,                // unsigned char bit
+		.resetConfiguration  =
+		{
+			.GPIO_Mode   = GPIO_Mode_IN_FLOATING,         // GPIOMode_TypeDef GPIO_Mode
+			.GPIO_Speed  = GPIO_Speed_50MHz,     // GPIOOType_TypeDef GPIO_OType
+		}
+	},
+
+    .UART3_TX =  // IOPinTypeDef UART3_TX
+	{
+		.setBitRegister      = &(GPIOB->BSRR),  // __IO uint16 *setBitRegister
+		.resetBitRegister    = &(GPIOB->BRR),  // __IO uint16 *resetBitRegister
+		.port                = GPIOB,            // GPIO_TypeDef *port
+		.bitWeight           = GPIO_Pin_10,       // uint32 pinBitWeight
+		.bit                 = 10,                // unsigned char bit
 		.resetConfiguration  =
 		{
 			.GPIO_Mode   = GPIO_Mode_AF_PP,         // GPIOMode_TypeDef GPIO_Mode
@@ -597,6 +611,20 @@ IOPinMapTypeDef IOMap =
 		}
 	},
 
+	.UART3_RX =  // IOPinTypeDef UART3_RX
+	{
+		.setBitRegister      = &(GPIOB->BSRR),  // __IO uint16 *setBitRegister
+		.resetBitRegister    = &(GPIOB->BRR),  // __IO uint16 *resetBitRegister
+		.port                = GPIOB,            // GPIO_TypeDef *port
+		.bitWeight           = GPIO_Pin_11,       // uint32 pinBitWeight
+		.bit                 = 11,                // unsigned char bit
+		.resetConfiguration  =
+		{
+			.GPIO_Mode   = GPIO_Mode_IN_FLOATING,         // GPIOMode_TypeDef GPIO_Mode
+			.GPIO_Speed  = GPIO_Speed_50MHz,     // GPIOOType_TypeDef GPIO_OType
+		}
+	},
+#if 0
 	.USB_V_BUS =  // IOPinTypeDef USB_V_BUS
 	{
 		.setBitRegister      = &(GPIOA->BSRR),  // __IO uint16 *setBitRegister
@@ -660,7 +688,7 @@ IOPinMapTypeDef IOMap =
             .resetBitRegister    = &(GPIOC->BRR),  // __IO uint16 *resetBitRegister
             .port                = GPIOC,            // GPIO_TypeDef *port
             .bitWeight           = GPIO_Pin_4,       // uint32 pinBitWeight
-            .bit                 = 0,                // unsigned char bit
+            .bit                 = 4,                // unsigned char bit
             .resetConfiguration  =
             {
                 .GPIO_Mode   = GPIO_Mode_Out_PP,        // GPIOMode_TypeDef GPIO_Mode
@@ -674,7 +702,7 @@ IOPinMapTypeDef IOMap =
             .resetBitRegister    = &(GPIOC->BRR),  // __IO uint16 *resetBitRegister
             .port                = GPIOC,            // GPIO_TypeDef *port
             .bitWeight           = GPIO_Pin_13,       // uint32 pinBitWeight
-            .bit                 = 0,                // unsigned char bit
+            .bit                 = 13,                // unsigned char bit
             .resetConfiguration  =
             {
             	.GPIO_Mode   = GPIO_Mode_IPU,        // GPIOMode_TypeDef GPIO_Mode
@@ -688,7 +716,7 @@ IOPinMapTypeDef IOMap =
             .resetBitRegister    = &(GPIOC->BRR),  // __IO uint16 *resetBitRegister
             .port                = GPIOC,            // GPIO_TypeDef *port
             .bitWeight           = GPIO_Pin_14,       // uint32 pinBitWeight
-            .bit                 = 0,                // unsigned char bit
+            .bit                 = 14,                // unsigned char bit
             .resetConfiguration  =
             {
             	.GPIO_Mode   = GPIO_Mode_IPU,        // GPIOMode_TypeDef GPIO_Mode
@@ -701,7 +729,7 @@ IOPinMapTypeDef IOMap =
             .resetBitRegister    = &(GPIOC->BRR),  // __IO uint16 *resetBitRegister
             .port                = GPIOC,            // GPIO_TypeDef *port
             .bitWeight           = GPIO_Pin_15,       // uint32 pinBitWeight
-            .bit                 = 0,                // unsigned char bit
+            .bit                 = 15,                // unsigned char bit
             .resetConfiguration  =
             {
             	.GPIO_Mode   = GPIO_Mode_IPU,        // GPIOMode_TypeDef GPIO_Mode
@@ -1021,8 +1049,10 @@ static void init()
 //	HAL.IOs->config->reset(&HAL.IOs->pins->WIRELESS_TX);
 //	HAL.IOs->config->reset(&HAL.IOs->pins->WIRELESS_RX);
 //	HAL.IOs->config->reset(&HAL.IOs->pins->WIRELESS_NRST);
-//	HAL.IOs->config->reset(&HAL.IOs->pins->RS232_TX);
-//	HAL.IOs->config->reset(&HAL.IOs->pins->RS232_RX);
+	HAL.IOs->config->reset(&HAL.IOs->pins->RS232_TX);
+	HAL.IOs->config->reset(&HAL.IOs->pins->RS232_RX);
+    HAL.IOs->config->reset(&HAL.IOs->pins->UART3_TX);
+	HAL.IOs->config->reset(&HAL.IOs->pins->UART3_RX);
 //	HAL.IOs->config->reset(&HAL.IOs->pins->USB_V_BUS);
 //	HAL.IOs->config->reset(&HAL.IOs->pins->USB_V_DM);
 //	HAL.IOs->config->reset(&HAL.IOs->pins->USB_V_DP);

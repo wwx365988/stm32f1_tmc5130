@@ -59,6 +59,9 @@
 
 		IOPinTypeDef RS232_TX;
 		IOPinTypeDef RS232_RX;
+        
+        IOPinTypeDef UART3_TX;
+		IOPinTypeDef UART3_RX;
 
 		IOPinTypeDef USB_V_BUS;
 		IOPinTypeDef USB_V_DM;

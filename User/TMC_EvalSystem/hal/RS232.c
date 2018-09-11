@@ -28,7 +28,8 @@ RXTXTypeDef RS232 =
 	.rxN             = rxN,
 	.txN             = txN,
 	.clearBuffers    = clearBuffers,
-	.baudRate        = 115200,
+	//.baudRate        = 115200,//波特率设置过高，串口助手第一个字符显示乱码
+	.baudRate        = 9600,
 	.bytesAvailable  = bytesAvailable
 };
 
@@ -56,23 +57,23 @@ static void init(void)
 	USART_InitTypeDef UART_InitStructure;
 	NVIC_InitTypeDef NVIC_InitStructure;
 
-//	USART_DeInit(USART1);
-//	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
+    USART_DeInit(USART1);
+	RCC_APB2PeriphClockCmd(RCC_APB2Periph_USART1, ENABLE);
 
 	HAL.IOs->config->reset(&HAL.IOs->pins->RS232_RX);
 	HAL.IOs->config->reset(&HAL.IOs->pins->RS232_TX);
 
-//	GPIO_PinAFConfig(HAL.IOs->pins->RS232_RX.port, HAL.IOs->pins->RS232_RX.bit, GPIO_AF_USART1);
-//	GPIO_PinAFConfig(HAL.IOs->pins->RS232_TX.port, HAL.IOs->pins->RS232_TX.bit, GPIO_AF_USART1);
-
 	USART_StructInit(&UART_InitStructure);
 	UART_InitStructure.USART_BaudRate = RS232.baudRate;
-//	USART_Init(USART1,&UART_InitStructure);
+	USART_Init(USART1,&UART_InitStructure);
 
-//	NVIC_InitStructure.NVIC_IRQChannel                    = USART1_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority  = INTR_PRI;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority         = 0;
-	NVIC_InitStructure.NVIC_IRQChannelCmd                 = ENABLE;
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
+    /* Enable the USARTy Interrupt */
+	NVIC_InitStructure.NVIC_IRQChannel = USART1_IRQn;	 
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+//  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority  = INTR_PRI;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 
 
@@ -149,6 +150,8 @@ static void tx(uint8 ch)
 {
 	buffers.tx.buffer[buffers.tx.wrote] = ch;
 	buffers.tx.wrote = (buffers.tx.wrote + 1) % BUFFER_SIZE;
+    
+    USART_ClearFlag(USART1,USART_FLAG_TC);
 	USART_ITConfig(USART1, USART_IT_TXE, ENABLE);
 }
 

@@ -51,6 +51,9 @@ static void init()
 	IdAssignmentTypeDef ids;
 	
 	HAL.init();                  // Initialize Hardware Abstraction Layer
+	
+	RS232.txN("test for usart1...",18);
+    UART.txN("test for usart3...",18);
 	#if 0
 	IDDetection_init();          // Initialize board detection
 	tmcl_init();                 // Initialize TMCL communication

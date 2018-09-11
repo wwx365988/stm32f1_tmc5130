@@ -50,113 +50,87 @@ static RXTXBufferingTypeDef buffers =
 	}
 };
 
-void __attribute__ ((interrupt)) USART2_IRQHandler(void);
+void __attribute__ ((interrupt)) USART3_IRQHandler(void);
 
 static void init(void)
 {
 	USART_InitTypeDef UART_InitStructure;
 	NVIC_InitTypeDef NVIC_InitStructure;
-	GPIO_InitTypeDef GPIO_InitStructure;
 
-	USART_DeInit(USART2);
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART2, ENABLE);
+	USART_DeInit(USART3);
+	RCC_APB1PeriphClockCmd(RCC_APB1Periph_USART3, ENABLE);
 
-	//One wire UART communication needs the TxD pin to be in open drain mode
-	//and a pull-up resistor on the RxD pin.
-	/*  HAL.IOs->pins->DIO17.configuration.GPIO_Mode = GPIO_Mode_AF;  //TxD (DIO17)
-	HAL.IOs->pins->DIO18.configuration.GPIO_Mode = GPIO_Mode_AF;  //RxD (DIO18)
-	HAL.IOs->pins->DIO17.configuration.GPIO_OType = GPIO_OType_OD; //TxD as open drain output
-	HAL.IOs->pins->DIO18.configuration.GPIO_PuPd  = GPIO_PuPd_UP;  //RxD with pull-up resistor
-
-	HAL.IOs->config->set(&HAL.IOs->pins->DIO17);
-	HAL.IOs->config->set(&HAL.IOs->pins->DIO18);
-
-	GPIO_PinAFConfig(HAL.IOs->pins->DIO17.port, HAL.IOs->pins->DIO17.bit, GPIO_AF_USART2);
-	GPIO_PinAFConfig(HAL.IOs->pins->DIO18.port, HAL.IOs->pins->DIO18.bit, GPIO_AF_USART2);
-	*/
-	//GPIOD aktivieren
-//	RCC_AHB1PeriphClockCmd(RCC_AHB1Periph_GPIOD, ENABLE);
-
-//	//UART2-Pins zuweisen (PD5 und PD6)
-//	GPIO_InitStructure.GPIO_Pin    = GPIO_Pin_5;
-//	GPIO_InitStructure.GPIO_Mode   = GPIO_Mode_AF;
-//	GPIO_InitStructure.GPIO_OType  = GPIO_OType_OD;
-//	GPIO_InitStructure.GPIO_Speed  = GPIO_Speed_50MHz;
-//	GPIO_InitStructure.GPIO_PuPd   = GPIO_PuPd_NOPULL;
-//	GPIO_Init(GPIOD, &GPIO_InitStructure);
-
-//	GPIO_InitStructure.GPIO_Pin    = GPIO_Pin_6;
-//	GPIO_InitStructure.GPIO_Mode   = GPIO_Mode_AF;
-//	GPIO_InitStructure.GPIO_OType  = GPIO_OType_PP;
-//	GPIO_InitStructure.GPIO_Speed  = GPIO_Speed_50MHz;
-//	GPIO_InitStructure.GPIO_PuPd   = GPIO_PuPd_UP;
-//	GPIO_Init(GPIOD, &GPIO_InitStructure);
-
-//	GPIO_PinAFConfig(GPIOD, GPIO_PinSource5, GPIO_AF_USART2);
-//	GPIO_PinAFConfig(GPIOD, GPIO_PinSource6, GPIO_AF_USART2);
+	HAL.IOs->config->reset(&HAL.IOs->pins->UART3_RX);
+	HAL.IOs->config->reset(&HAL.IOs->pins->UART3_TX);
 
 	USART_StructInit(&UART_InitStructure);
 	UART_InitStructure.USART_BaudRate = 115200;
-	USART_Init(USART2,&UART_InitStructure);
+	USART_Init(USART3,&UART_InitStructure);
 
-	NVIC_InitStructure.NVIC_IRQChannel                    = USART2_IRQn;
-	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority  = INTR_PRI;
-	NVIC_InitStructure.NVIC_IRQChannelSubPriority         = 0;
-	NVIC_InitStructure.NVIC_IRQChannelCmd                 = ENABLE;
+    NVIC_PriorityGroupConfig(NVIC_PriorityGroup_0);
+    /* Enable the USARTy Interrupt */
+	NVIC_InitStructure.NVIC_IRQChannel                    = USART3_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority = 0;
+//  NVIC_InitStructure.NVIC_IRQChannelPreemptionPriority  = INTR_PRI;
+	NVIC_InitStructure.NVIC_IRQChannelSubPriority = 1;
+	NVIC_InitStructure.NVIC_IRQChannelCmd = ENABLE;
 	NVIC_Init(&NVIC_InitStructure);
 
 
-	USART_ClearFlag(USART2, USART_FLAG_CTS | USART_FLAG_LBD  | USART_FLAG_TXE  |
+	USART_ClearFlag(USART3, USART_FLAG_CTS | USART_FLAG_LBD  | USART_FLAG_TXE  |
 	                        USART_FLAG_TC  | USART_FLAG_RXNE | USART_FLAG_IDLE |
 	                        USART_FLAG_ORE | USART_FLAG_NE   | USART_FLAG_FE   |
 	                        USART_FLAG_PE);
-	USART_ITConfig(USART2,USART_IT_PE, DISABLE);
-	USART_ITConfig(USART2,USART_IT_TXE, ENABLE);
-	USART_ITConfig(USART2,USART_IT_TC, ENABLE);
-	USART_ITConfig(USART2,USART_IT_RXNE, ENABLE);
-	USART_ITConfig(USART2,USART_IT_IDLE, DISABLE);
-	USART_ITConfig(USART2,USART_IT_LBD, DISABLE);
-	USART_ITConfig(USART2,USART_IT_CTS, DISABLE);
-	USART_ITConfig(USART2,USART_IT_ERR, DISABLE);
+	USART_ITConfig(USART3,USART_IT_PE, DISABLE);
+	USART_ITConfig(USART3,USART_IT_TXE, ENABLE);
+	USART_ITConfig(USART3,USART_IT_TC, ENABLE);
+	USART_ITConfig(USART3,USART_IT_RXNE, ENABLE);
+	USART_ITConfig(USART3,USART_IT_IDLE, DISABLE);
+	USART_ITConfig(USART3,USART_IT_LBD, DISABLE);
+	USART_ITConfig(USART3,USART_IT_CTS, DISABLE);
+	USART_ITConfig(USART3,USART_IT_ERR, DISABLE);
 
-	USART_Cmd(USART2, ENABLE);
+	USART_Cmd(USART3, ENABLE);
 }
 
 static void deInit(void)
 {
 	NVIC_InitTypeDef  NVIC_InitStructure;
-	USART_Cmd(USART2, DISABLE);
+	USART_Cmd(USART3, DISABLE);
 
-	NVIC_InitStructure.NVIC_IRQChannel     = USART2_IRQn;
+	NVIC_InitStructure.NVIC_IRQChannel     = USART3_IRQn;
 	NVIC_InitStructure.NVIC_IRQChannelCmd  = DISABLE;
 	NVIC_Init(&NVIC_InitStructure);
 
-	USART_ClearFlag(USART2, 0
-	                        | USART_FLAG_CTS
-	                        | USART_FLAG_LBD
-	                        | USART_FLAG_TXE
-	                        | USART_FLAG_TC
-	                        | USART_FLAG_RXNE
-	                        | USART_FLAG_IDLE
-	                        | USART_FLAG_ORE
-	                        | USART_FLAG_NE
-	                        | USART_FLAG_FE
-	                        | USART_FLAG_PE
-	               );
+	USART_ClearFlag
+	(
+		USART3,
+		0
+		| USART_FLAG_CTS
+		| USART_FLAG_LBD
+		| USART_FLAG_TXE
+		| USART_FLAG_TC
+		| USART_FLAG_RXNE
+		| USART_FLAG_IDLE
+		| USART_FLAG_ORE
+		| USART_FLAG_NE
+		| USART_FLAG_FE
+		| USART_FLAG_PE
+	);
 
 	clearBuffers();
 }
 
-void USART2_IRQHandler(void)
+void USART3_IRQHandler(void)
 {
 	uint8 byte;
 	
 	// Receive interrupt
-	if(USART2->SR & USART_FLAG_RXNE)
+	if(USART3->SR & USART_FLAG_RXNE)
 	{
 		// One-wire UART communication:
 		// Ignore received byte when a byte has just been sent (echo).
-		byte = USART2->DR;
+		byte = USART3->DR;
 		if(!UARTSendFlag)
 		{	// not sending, received real data instead of echo -> advance ring buffer index and available counter
       buffers.rx.buffer[buffers.rx.wrote]=byte;
@@ -167,31 +141,31 @@ void USART2_IRQHandler(void)
 
 	// Transmit buffer empty interrupt => send next byte if there is something
 	// to be sent.
-	if(USART2->SR & USART_FLAG_TXE)
+	if(USART3->SR & USART_FLAG_TXE)
 	{
 		if(buffers.tx.read != buffers.tx.wrote)
 		{
 			UARTSendFlag = TRUE;
-			USART2->DR  = buffers.tx.buffer[buffers.tx.read];
+			USART3->DR  = buffers.tx.buffer[buffers.tx.read];
 			buffers.tx.read = (buffers.tx.read + 1) % BUFFER_SIZE;
 		}
 		else
 		{
-			USART_ITConfig(USART2, USART_IT_TXE, DISABLE);
+			USART_ITConfig(USART3, USART_IT_TXE, DISABLE);
 		}
 	}
 
 	// Transmission complete interrupt => do not ignore echo any more
 	// after last bit has been sent.
-	if(USART2->SR & USART_FLAG_TC)
+	if(USART3->SR & USART_FLAG_TC)
 	{
 		//Only if there are no more bytes left in the transmit buffer
 		if(buffers.tx.read == buffers.tx.wrote) 
 		{
-  		byte = USART2->DR;  //Ignore spurios echos of the last sent byte that sometimes occur.
+  		byte = USART3->DR;  //Ignore spurios echos of the last sent byte that sometimes occur.
 			UARTSendFlag = FALSE;
 		}
-		USART_ClearITPendingBit(USART2, USART_IT_TC);
+		USART_ClearITPendingBit(USART3, USART_IT_TC);
 	}
 }
 
@@ -199,7 +173,7 @@ static void tx(uint8 ch)
 {
 	buffers.tx.buffer[buffers.tx.wrote] = ch;
 	buffers.tx.wrote = (buffers.tx.wrote + 1) % BUFFER_SIZE;
-	USART_ITConfig(USART2, USART_IT_TXE, ENABLE);
+	USART_ITConfig(USART3, USART_IT_TXE, ENABLE);
 }
 
 static uint8 rx(uint8 *ch)

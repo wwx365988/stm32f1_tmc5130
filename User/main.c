@@ -54,7 +54,7 @@ static void init()
 	
 	RS232.txN("test for usart1...",18);
     UART.txN("test for usart3...",18);
-	#if 0
+	#if 1
 	IDDetection_init();          // Initialize board detection
 	tmcl_init();                 // Initialize TMCL communication
 
@@ -67,8 +67,12 @@ static void init()
 	Evalboards.ch2.id = 0;       // preset id for driver board to 0 --> error/not found
 
 	// We disable the drivers before configurating anything
+	//V_EN
 	HAL.IOs->config->toOutput(&HAL.IOs->pins->DIO0);
 	HAL.IOs->config->setHigh(&HAL.IOs->pins->DIO0);
+    //H_EN
+	HAL.IOs->config->toOutput(&HAL.IOs->pins->DIO4);
+	HAL.IOs->config->setHigh(&HAL.IOs->pins->DIO4);
 
 	IDDetection_initialScan(&ids);  // start initial board detection
 	IDDetection_initialScan(&ids);  // start second time, first time not 100% reliable, not sure why - too fast after startup?
@@ -99,12 +103,12 @@ int main(void)
 //		Evalboards.ch2.periodicJob(systick_getTick());
 
 //		// Process TMCL communication
-//		tmcl_process();
+		tmcl_process();
 
-//        LED_ON();
-//        delay_ms(500);
-//        LED_OFF();
-//        delay_ms(500);
+        LED_ON();
+        delay_ms(250);
+        LED_OFF();
+        delay_ms(250);
 
         handle_all_key();
 	}

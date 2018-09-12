@@ -12,8 +12,14 @@
 #define VM_MIN  50   // VM[V/10] min
 #define VM_MAX  480  // VM[V/10] max
 
-#define MOTORS         1 // number of motors for this board
+//#define MOTORS         1 // number of motors for this board
+#define MOTORS         2 // number of motors for this board
+
 #define DEFAULT_MOTOR  0
+
+#define TMC5130_V 0
+#define TMC5130_H 1
+
 
 static uint32 vMaxModified = 0;
 
@@ -113,6 +119,8 @@ typedef struct
 } PinsTypeDef;
 
 static PinsTypeDef Pins;
+static PinsTypeDef PinsH;
+
 
 static uint32 rotate(uint8 motor, int32 velocity)
 {
@@ -1007,6 +1015,7 @@ static uint32 userFunction(uint8 type, uint8 motor, int32 *value)
 			if(*value & (1<<0))
 			{
 				HAL.IOs->config->toInput(Pins.REFR_UC); // pull up -> set it to floating causes high
+				HAL.IOs->config->toInput(PinsH.REFR_UC); // pull up -> set it to floating causes high
 			}
 			else
 			{
@@ -1116,8 +1125,215 @@ static uint32 userFunction(uint8 type, uint8 motor, int32 *value)
 	return errors;
 }
 
+
+
+static uint32 __userFunction(uint8 type, uint8 motor, int32 *value,uint8 which)
+{
+	uint32 buffer;
+	uint32 errors = 0;
+
+	UNUSED(motor);
+
+	switch(type)
+	{
+	case 0:  // simulate reference switches, set high to support external ref swiches
+		/*
+		 * The the TMC5130 ref switch input is pulled high by external resistor an can be pulled low either by
+		 * this 碌C or external signal. To use external signal make sure the signals from 碌C are high or floating.
+		 */
+		if(!(*value & ~3))
+		{
+			if(*value & (1<<0))
+			{
+			    if(which == TMC5130_V){         
+    				HAL.IOs->config->toInput(Pins.REFR_UC); // pull up -> set it to floating causes high
+                 }
+				else if(which == TMC5130_H){         
+    				HAL.IOs->config->toInput(PinsH.REFR_UC); // pull up -> set it to floating causes high
+                 }
+			}
+			else
+			{
+			    if(which == TMC5130_V){         
+    				HAL.IOs->config->toOutput(Pins.REFR_UC);
+    				HAL.IOs->config->setLow(Pins.REFR_UC);
+                 }
+				else if(which == TMC5130_H){   
+                    HAL.IOs->config->toOutput(PinsH.REFR_UC);
+    				HAL.IOs->config->setLow(PinsH.REFR_UC);
+                 }
+			}
+
+			if(*value & (1<<1))
+			{
+			    if(which == TMC5130_V){         
+				HAL.IOs->config->toInput(Pins.REFL_UC); // pull up -> set it to floating causes high
+                 }else if(which == TMC5130_H){         
+				HAL.IOs->config->toInput(PinsH.REFL_UC); // pull up -> set it to floating causes high
+                 }
+			}
+			else
+			{
+			    if(which == TMC5130_V){         
+				HAL.IOs->config->toOutput(Pins.REFL_UC);
+				HAL.IOs->config->setLow(Pins.REFL_UC);
+                 }else if(which == TMC5130_H){         
+				HAL.IOs->config->toOutput(PinsH.REFL_UC);
+				HAL.IOs->config->setLow(PinsH.REFL_UC);
+                 }
+			}
+		}
+		else
+		{
+			errors |= ERROR_VALUE;
+		}
+		break;
+	case 1:  // set analogue current duty
+		/*
+		 * Current will be defined by analogue *value voltage or current signal. In any case this function
+		 * will generate a analogue voltage by PWM for up to 50% duty and a switch for the other 50%.
+		 * The reference voltage will be AIN_REF = VCC_IO * *value/20000 with *value = {0..20000}
+		 */
+
+		if(*value <= 20000)
+		{
+			if(*value > 10000)
+			    if(which == TMC5130_V){         
+				    HAL.IOs->config->setHigh(Pins.AIN_REF_SW);
+                 }
+                else if(which == TMC5130_H){         
+				    HAL.IOs->config->setHigh(PinsH.AIN_REF_SW);
+                 }
+			else
+            {         
+                if(which == TMC5130_V){         
+                    HAL.IOs->config->setLow(Pins.AIN_REF_SW);                 
+                    }
+                else if(which == TMC5130_H){         
+                    HAL.IOs->config->setLow(PinsH.AIN_REF_SW);                 
+                 }
+            }
+
+			Timer.setDuty(*value % 10001);
+		}
+		else
+			errors |= ERROR_VALUE;
+		break;
+	case 2:  // Use internal clock
+		/*
+		 * Internal clock will be enabled by calling this function with a *value != 0 and unpower and repower the motor supply while keeping usb connected.
+		 */
+		if(*value)
+		{
+			HAL.IOs->config->toOutput(&HAL.IOs->pins->CLK16);
+			HAL.IOs->config->setLow(&HAL.IOs->pins->CLK16);
+		}
+		else
+			HAL.IOs->config->reset(&HAL.IOs->pins->CLK16);
+		break;
+	case 3:  // writing a register at address = motor with *value = *value and reading back the *value
+		// DO NOT USE!
+		// todo BUG 3: using the motor for both address and motor value can lead to trying to get struct pointer from an array outside its bounds
+		//             and then loading a function pointer from that. That is pretty a much guaranteed crash and/or hard fault!!! (LH) #2
+
+		//tmc5130_writeInt(motor, motor, *value);
+		//*value = tmc5130_readInt(motor, motor);
+		break;
+	case 4:  // set or release/read ENCB_[DCEN_CFG4]
+		switch(buffer = *value)
+		{
+		case 0:
+            if(which == TMC5130_V){         
+    			HAL.IOs->config->toOutput(Pins.ENCB_DCEN_CFG4);
+    			HAL.IOs->config->setLow(Pins.ENCB_DCEN_CFG4);
+                }
+            else if(which == TMC5130_H){   
+                HAL.IOs->config->toOutput(PinsH.ENCB_DCEN_CFG4);
+    			HAL.IOs->config->setLow(PinsH.ENCB_DCEN_CFG4);
+                }      
+			break;
+		case 1:
+            if(which == TMC5130_V){         
+    			HAL.IOs->config->toOutput(Pins.ENCB_DCEN_CFG4);
+    			HAL.IOs->config->setHigh(Pins.ENCB_DCEN_CFG4);
+                }
+            else if(which == TMC5130_H){ 
+                HAL.IOs->config->toOutput(PinsH.ENCB_DCEN_CFG4);
+    			HAL.IOs->config->setHigh(PinsH.ENCB_DCEN_CFG4);
+                }
+			break;
+		default:
+            if(which == TMC5130_V){         
+    			HAL.IOs->config->toInput(Pins.ENCB_DCEN_CFG4);
+    			buffer = HAL.IOs->config->isHigh(Pins.ENCB_DCEN_CFG4);
+                }
+            else if(which == TMC5130_H){ 
+                HAL.IOs->config->toInput(PinsH.ENCB_DCEN_CFG4);
+    			buffer = HAL.IOs->config->isHigh(PinsH.ENCB_DCEN_CFG4);
+                }
+			break;
+		}
+		*value = buffer;
+		break;
+	case 5:  // read interrupt pin SWN_DIAG0
+        if(which == TMC5130_V){         
+		    *value = (HAL.IOs->config->isHigh(Pins.SWN_DIAG0))? 1 : 0;
+        }else if(which == TMC5130_H){         
+		    *value = (HAL.IOs->config->isHigh(PinsH.SWN_DIAG0))? 1 : 0;
+        }
+		break;
+	case 6:  // read interrupt pin SWP_DIAG1
+        if(which == TMC5130_V){         
+		       *value = (HAL.IOs->config->isHigh(Pins.SWP_DIAG1))? 1 : 0;
+        }else if(which == TMC5130_H){         
+		       *value = (HAL.IOs->config->isHigh(PinsH.SWP_DIAG1))? 1 : 0;
+        }
+		break;
+	case 7:  // enable single wire interface (SWSEL)
+		if(*value == 1)
+            if(which == TMC5130_V){         
+			    HAL.IOs->config->setHigh(Pins.SWSEL);
+            }else if(which == TMC5130_H){         
+			    HAL.IOs->config->setHigh(PinsH.SWSEL);
+            }
+		else
+            if(which == TMC5130_V){         
+    			HAL.IOs->config->setLow(Pins.SWSEL);
+            }else    if(which == TMC5130_H){         
+    			HAL.IOs->config->setLow(PinsH.SWSEL);
+            }
+		break;
+	case 252:
+		if(*value)
+		{
+            if(which == TMC5130_V){         
+    			HAL.IOs->config->toOutput(Pins.ENCB_DCEN_CFG4);
+    			HAL.IOs->config->setLow(Pins.ENCB_DCEN_CFG4);
+            }else if(which == TMC5130_H){         
+    			HAL.IOs->config->toOutput(PinsH.ENCB_DCEN_CFG4);
+    			HAL.IOs->config->setLow(PinsH.ENCB_DCEN_CFG4);
+            }
+		}
+		else
+		{
+            if(which == TMC5130_V){         
+			    HAL.IOs->config->toInput(Pins.ENCB_DCEN_CFG4);
+            }else if(which == TMC5130_H){         
+			    HAL.IOs->config->toInput(PinsH.ENCB_DCEN_CFG4);
+            }
+		}
+		break;
+	default:
+		errors |= ERROR_TYPE;
+		break;
+	}
+	return errors;
+}
+
+
 static void deInit(void)
 {
+    //垂直
 	HAL.IOs->config->setLow(Pins.DRV_ENN_CFG6);
 	HAL.IOs->config->reset(Pins.AIN_REF_PWM);
 	HAL.IOs->config->reset(Pins.AIN_REF_SW);
@@ -1130,6 +1346,17 @@ static void deInit(void)
 	HAL.IOs->config->reset(Pins.SWP_DIAG1);
 	HAL.IOs->config->reset(Pins.SWSEL);
 	HAL.IOs->config->reset(Pins.DRV_ENN_CFG6);
+    //水平
+	HAL.IOs->config->setLow(PinsH.DRV_ENN_CFG6);
+	HAL.IOs->config->reset(PinsH.AIN_REF_PWM);
+	HAL.IOs->config->reset(PinsH.AIN_REF_SW);
+	HAL.IOs->config->reset(PinsH.ENCA_DCIN_CFG5);
+	HAL.IOs->config->reset(PinsH.ENCB_DCEN_CFG4);
+	HAL.IOs->config->reset(PinsH.ENCN_DCO);
+	HAL.IOs->config->reset(PinsH.SWN_DIAG0);
+	HAL.IOs->config->reset(PinsH.SWP_DIAG1);
+	HAL.IOs->config->reset(PinsH.SWSEL);
+	HAL.IOs->config->reset(PinsH.DRV_ENN_CFG6);
 
 	Timer.deInit();
 };
@@ -1138,12 +1365,41 @@ static uint8 reset()
 {
 	if(!tmc5130_readInt(0, TMC5130_VACTUAL))
 		tmc5130_reset(TMC5130_config[0]);
-
+    //垂直
 	HAL.IOs->config->setLow(Pins.AIN_REF_SW);
 	HAL.IOs->config->toInput(Pins.REFL_UC);
 	HAL.IOs->config->toInput(Pins.REFR_UC);
+    //水平
+    HAL.IOs->config->setLow(PinsH.AIN_REF_SW);
+	HAL.IOs->config->toInput(PinsH.REFL_UC);
+	HAL.IOs->config->toInput(PinsH.REFR_UC);
 	return 1;
 }
+
+
+static uint8 __reset(uint8 which)
+{
+	if(!tmc5130_readInt(0, TMC5130_VACTUAL))
+		tmc5130_reset(TMC5130_config[0]);
+    switch(which)
+    {
+        case TMC5130_V:
+        //垂直
+    	HAL.IOs->config->setLow(Pins.AIN_REF_SW);
+    	HAL.IOs->config->toInput(Pins.REFL_UC);
+    	HAL.IOs->config->toInput(Pins.REFR_UC);
+        break;
+        
+        case TMC5130_H:
+        //水平
+        HAL.IOs->config->setLow(PinsH.AIN_REF_SW);
+    	HAL.IOs->config->toInput(PinsH.REFL_UC);
+    	HAL.IOs->config->toInput(PinsH.REFR_UC);
+        break;
+    }
+	return 1;
+}
+
 
 static uint8 restore()
 {
@@ -1157,10 +1413,49 @@ static void enableDriver(DriverState state)
 		state = Evalboards.driverEnable;
 
 	if(state ==  DRIVER_DISABLE)
+    {   
 		HAL.IOs->config->setHigh(Pins.DRV_ENN_CFG6);
+        HAL.IOs->config->setHigh(PinsH.DRV_ENN_CFG6);
+    }
 	else if((state == DRIVER_ENABLE) && (Evalboards.driverEnable == DRIVER_ENABLE))
+    {   
 		HAL.IOs->config->setLow(Pins.DRV_ENN_CFG6);
+        HAL.IOs->config->setLow(PinsH.DRV_ENN_CFG6);
+    }
 }
+
+
+
+static void __enableDriver(DriverState state, uint8 which)
+{
+    if(state == DRIVER_USE_GLOBAL_ENABLE)
+        state = Evalboards.driverEnable;
+
+    switch(which)
+    {
+        case TMC5130_V:
+            if(state ==  DRIVER_DISABLE)
+            {   
+            	HAL.IOs->config->setHigh(Pins.DRV_ENN_CFG6);
+            }
+            else if((state == DRIVER_ENABLE) && (Evalboards.driverEnable == DRIVER_ENABLE))
+            {   
+            	HAL.IOs->config->setLow(Pins.DRV_ENN_CFG6);
+            }
+        break;
+        case TMC5130_H:
+            if(state ==  DRIVER_DISABLE)
+            {   
+                HAL.IOs->config->setHigh(PinsH.DRV_ENN_CFG6);
+            }
+            else if((state == DRIVER_ENABLE) && (Evalboards.driverEnable == DRIVER_ENABLE))
+            {   
+                HAL.IOs->config->setLow(PinsH.DRV_ENN_CFG6);
+            }
+        break;
+    }
+}
+
 
 void TMC5130_init(void)
 {
@@ -1168,18 +1463,16 @@ void TMC5130_init(void)
 	for(i = 0; i < MOTORS; i++)
 		tmc5130_initConfig(&TMC5130[i]);
 
-	Pins.DRV_ENN_CFG6    = &HAL.IOs->pins->DIO0;
-	Pins.ENCN_DCO        = &HAL.IOs->pins->DIO1;
-	Pins.ENCA_DCIN_CFG5  = &HAL.IOs->pins->DIO2;
-	Pins.ENCB_DCEN_CFG4  = &HAL.IOs->pins->DIO3;
-	Pins.REFL_UC         = &HAL.IOs->pins->DIO6;
-	Pins.REFR_UC         = &HAL.IOs->pins->DIO7;
-	Pins.AIN_REF_SW      = &HAL.IOs->pins->DIO10;
-	Pins.AIN_REF_PWM     = &HAL.IOs->pins->DIO11;
-	Pins.SWSEL           = &HAL.IOs->pins->DIO14;
-	Pins.SWP_DIAG1       = &HAL.IOs->pins->DIO15;
-	Pins.SWN_DIAG0       = &HAL.IOs->pins->DIO16;
-
+    //垂直
+	Pins.DRV_ENN_CFG6    = &HAL.IOs->pins->DIO0;//V_EN
+	Pins.ENCN_DCO        = &HAL.IOs->pins->DIO1;//KEY_V_ZERO
+	Pins.ENCA_DCIN_CFG5  = &HAL.IOs->pins->DIO2;//TIM4_CH1_VENA
+	Pins.ENCB_DCEN_CFG4  = &HAL.IOs->pins->DIO3;//TIM4_CH2_VENB
+	Pins.REFL_UC         = &HAL.IOs->pins->DIO6;//D_LMT
+	Pins.REFR_UC         = &HAL.IOs->pins->DIO7;//U_LMT
+	Pins.AIN_REF_SW      = &HAL.IOs->pins->DIO10;//DAC_OUT2
+	Pins.SWP_DIAG1       = &HAL.IOs->pins->DIO15;//V_INT
+	Pins.SWN_DIAG0       = &HAL.IOs->pins->DIO15;//V_INT
 	HAL.IOs->config->toInput(Pins.ENCN_DCO);
 	HAL.IOs->config->toInput(Pins.ENCB_DCEN_CFG4);
 	HAL.IOs->config->toInput(Pins.ENCA_DCIN_CFG5);
@@ -1194,6 +1487,31 @@ void TMC5130_init(void)
 	HAL.IOs->config->toOutput(Pins.AIN_REF_PWM);
 
 	HAL.IOs->config->setLow(Pins.SWSEL);
+    //水平
+    PinsH.DRV_ENN_CFG6    = &HAL.IOs->pins->DIO4;//V_EN
+	PinsH.ENCN_DCO        = &HAL.IOs->pins->DIO5;//H_ZERO
+	PinsH.ENCA_DCIN_CFG5  = &HAL.IOs->pins->DIO8;//TIM2_CH1_VENA
+	PinsH.ENCB_DCEN_CFG4  = &HAL.IOs->pins->DIO9;//TIM2_CH2_VENB
+	PinsH.AIN_REF_SW      = &HAL.IOs->pins->DIO12;//DAC_OUT1
+	PinsH.SWP_DIAG1       = &HAL.IOs->pins->DIO13;//H_INT
+	PinsH.SWN_DIAG0       = &HAL.IOs->pins->DIO13;//H_INT
+
+	HAL.IOs->config->toInput(PinsH.ENCN_DCO);
+	HAL.IOs->config->toInput(PinsH.ENCB_DCEN_CFG4);
+	HAL.IOs->config->toInput(PinsH.ENCA_DCIN_CFG5);
+
+	HAL.IOs->config->toInput(PinsH.SWN_DIAG0);
+	HAL.IOs->config->toInput(PinsH.SWP_DIAG1);
+	HAL.IOs->config->toOutput(PinsH.SWSEL);
+	//HAL.IOs->config->toInput(PinsH.REFL_UC);
+	//HAL.IOs->config->toInput(PinsH.REFR_UC);
+	HAL.IOs->config->toOutput(PinsH.DRV_ENN_CFG6);
+	HAL.IOs->config->toOutput(PinsH.AIN_REF_SW);
+	//HAL.IOs->config->toOutput(PinsH.AIN_REF_PWM);
+
+	HAL.IOs->config->setLow(PinsH.SWSEL);
+
+
 
 	for( i = 0; i < MOTORS; i++)
 	{
@@ -1233,8 +1551,11 @@ void TMC5130_init(void)
 //	Pins.AIN_REF_PWM->configuration.GPIO_Mode = GPIO_Mode_AF;
 //	GPIO_PinAFConfig(Pins.AIN_REF_PWM->port, Pins.AIN_REF_PWM->bit, GPIO_AF_TIM1);
 
-
+    //垂直
 	HAL.IOs->config->set(Pins.AIN_REF_PWM);
+    //水平
+    HAL.IOs->config->set(PinsH.AIN_REF_PWM);
+
 	Timer.init();
 	Timer.setDuty(0);
 };

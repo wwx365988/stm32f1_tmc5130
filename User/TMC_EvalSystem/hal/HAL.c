@@ -37,7 +37,7 @@ static void init(void)
 
 	IOs.init();
 	IOMap.init();
-//	SPI.init();
+	SPI.init();
 	RS232.init();
     UART.init();
 //	LEDs.init();

@@ -209,9 +209,6 @@ RXTXTypeDef interfaces[4];
 uint32 numberOfInterfaces;
 uint32 resetRequest = 0;
 
-#if defined(Landungsbruecke)
-extern uint32 BLMagic;
-#endif
 
 // Sets TMCL status from Evalboard error. Returns the parameter given to allow for compact error handling
 uint8 setTMCLStatus(uint8 evalError)
@@ -403,15 +400,14 @@ void ExecuteActualCommand()
 void tmcl_init()
 {
 	ActualCommand.Error  = TMCL_RX_ERROR_NODATA;
-	interfaces[0]        = *HAL.USB;
+	interfaces[0]        = *HAL.UART;
 	interfaces[1]        = *HAL.RS232;
-	interfaces[2]        = *HAL.WLAN;
-	numberOfInterfaces   = 3;
+	numberOfInterfaces   = 2;
 }
 
 void tmcl_process()
 {
-	static int currentInterface = 0;
+	static int currentInterface = 1;
 	uint32 i;
 
 	if(ActualCommand.Error != TMCL_RX_ERROR_NODATA)

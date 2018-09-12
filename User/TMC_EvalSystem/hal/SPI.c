@@ -18,7 +18,7 @@ SPITypeDef SPI=
 {
 	.ch1 =
 	{
-		.periphery  = SPI3,
+		.periphery  = SPI2,
 		.CSN        = &IODummy,
 		.readWrite  = spi_ch1_readWrite,
 		.reset      = reset_ch1
@@ -55,45 +55,21 @@ static void init(void)
 	SPI_Init(SPI2, &SPIInit);
 	SPI_Cmd(SPI2, ENABLE);
 
-//	GPIO_PinAFConfig(GPIOB, GPIO_PinSource13, GPIO_AF_SPI2);
-//	GPIO_PinAFConfig(GPIOB, GPIO_PinSource14, GPIO_AF_SPI2);
-//	GPIO_PinAFConfig(GPIOB, GPIO_PinSource15, GPIO_AF_SPI2);
-
-	//-------- SPI3 initialisieren und mit den Pins verbinden ---------
-	RCC_APB1PeriphClockCmd(RCC_APB1Periph_SPI3, ENABLE);
-
-	//SPI initialisieren
-	SPIInit.SPI_Direction          = SPI_Direction_2Lines_FullDuplex;
-	SPIInit.SPI_Mode               = SPI_Mode_Master;
-	SPIInit.SPI_DataSize           = SPI_DataSize_8b;
-	SPIInit.SPI_CPOL               = SPI_CPOL_High;
-	SPIInit.SPI_CPHA               = SPI_CPHA_2Edge;
-	SPIInit.SPI_NSS                = SPI_NSS_Soft;
-	SPIInit.SPI_BaudRatePrescaler  = SPI_BaudRatePrescaler_32;
-	SPIInit.SPI_FirstBit           = SPI_FirstBit_MSB;
-	SPIInit.SPI_CRCPolynomial      = 0;
-	SPI_Init(SPI3, &SPIInit);
-	SPI_Cmd(SPI3, ENABLE);
-
-//	GPIO_PinAFConfig(GPIOC, GPIO_PinSource10, GPIO_AF_SPI3);
-//	GPIO_PinAFConfig(GPIOC, GPIO_PinSource11, GPIO_AF_SPI3);
-//	GPIO_PinAFConfig(GPIOC, GPIO_PinSource12, GPIO_AF_SPI3);
-
 	reset_ch1();
 	reset_ch2();
 
 	// configure default SPI channel_1
 	SPIChannel_1_default = &HAL.SPI->ch1;
-	SPIChannel_1_default->CSN = &HAL.IOs->pins->SPI1_CSN;
+	SPIChannel_1_default->CSN = &HAL.IOs->pins->SPI2_CSN0;//SPI2_NSSH
 	// configure default SPI channel_2
 	SPIChannel_2_default = &HAL.SPI->ch2;
-	SPIChannel_2_default->CSN = &HAL.IOs->pins->SPI2_CSN0;
+	SPIChannel_2_default->CSN = &HAL.IOs->pins->SPI2_CSN1;//SPI2_NSSV
 }
 
 static void reset_ch1()
 {
 	SPI.ch1.CSN        = &IODummy;
-	SPI.ch1.periphery  = SPI3;
+	SPI.ch1.periphery  = SPI2;
 	SPI.ch1.readWrite  = spi_ch1_readWrite;
 }
 

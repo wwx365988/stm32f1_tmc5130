@@ -27,7 +27,7 @@ typedef enum
     KEY_LD = 0x4,
     KEY_RU = 0x8,
 }KEY_VALUE;
-void delay_ms(uint16 das);
+void delay_ms(uint32 delay);
 void systick_task(void);
 void SysTick_Init(void);
 void systick_init(void);

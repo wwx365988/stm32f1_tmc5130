@@ -2,6 +2,8 @@
 #include "SysTick.h"
 
 static __IO u32 TimingDelay;
+volatile u32 systick = 0;
+
 uint16_t g_run_cnt       = 0;
 uint8_t  g_second        = 0;
 uint8_t  g_key_ld        = 0;
@@ -43,14 +45,23 @@ void systick_init(void)
 
 }
 
-void delay_ms(uint16_t das)
+u32 systick_getTick()
 {
-  	TimingDelay = das;
+	return systick;
+}
+
+void delay_ms(uint32 delay)
+{
+#ifdef __EBOS__
+  	TimingDelay = delay;
 	
   	while(TimingDelay > 0)
     {
 		    ;
 	}
+#endif
+    uint32 startTick = systick;
+	while((systick-startTick) <= delay) {}
 }
 
 void key_scan(void)
@@ -121,15 +132,18 @@ void key_scan(void)
 
 void systick_task(void)
 {	
+#ifdef __EBOS__
     if (TimingDelay > 0) 
     {
         TimingDelay--;		
     }
+#endif
+    systick++;
 
     g_run_cnt++;
     if(g_run_cnt == 250) 
     { 
-        GPIOC->ODR ^= GPIO_Pin_4;
+        //GPIOC->ODR ^= GPIO_Pin_4;
         g_second = 1;
         g_run_cnt = 0;
     }

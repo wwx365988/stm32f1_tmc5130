@@ -116,10 +116,10 @@ void vitalsignsmonitor_checkVitalSigns()
 	static uint32 lastTick = 0;
 	uint32 tick;
 
-//	tick = systick_getTick();
+	tick = systick_getTick();
 
 	// Check motor supply VM every 10ms
-	if((tick - lastTick) >= 10)
+	if((tick - lastTick) >= 5*2)
 	{
 		checkVM();
 		lastTick = tick;
@@ -130,7 +130,7 @@ void vitalsignsmonitor_checkVitalSigns()
 	Evalboards.ch1.checkErrors(tick);
 
 	// Status LED
-	heartBeat(tick);
+	//heartBeat(tick);
 
 	// reset all error bits but not the voltage errors
 	errors = VitalSignsMonitor.errors & (VSM_ERRORS_OVERVOLTAGE | VSM_ERRORS_OVERVOLTAGE_CH1 | VSM_ERRORS_OVERVOLTAGE_CH2);

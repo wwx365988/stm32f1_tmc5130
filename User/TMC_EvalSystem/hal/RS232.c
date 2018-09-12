@@ -129,7 +129,8 @@ void USART1_IRQHandler(void)
 		available++;
 	}
 
-	if(USART1->SR & USART_FLAG_TXE)
+	//if(USART1->SR & USART_FLAG_TXE)
+    if(USART_GetFlagStatus(USART1, USART_FLAG_TC) != SET)
 	{
 		if(buffers.tx.read != buffers.tx.wrote)
 		{
